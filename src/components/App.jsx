@@ -1,11 +1,10 @@
-import React from 'react';
-// import { nanoid } from 'nanoid';
-import { IoPersonAdd } from 'react-icons/io5';
+import { useState, useEffect } from 'react';
+
 import { BsJournalBookmark } from 'react-icons/bs';
 import { MdNotListedLocation } from 'react-icons/md';
 
 import { PhoneBook } from './PhoneBook/PhoneBook';
-import { AddNewContactBtn, MainTitle } from './PhoneBook/PhoneBook.styled';
+import { MainTitle } from './PhoneBook/PhoneBook.styled';
 import { ContactsList } from './ContactsList/ContactsList';
 import {
   ContactsTitle,
@@ -17,108 +16,90 @@ import { Filter } from './Filter/Filter';
 import data from './data.json';
 import { FormSection, PhoneBookBody } from './PhoneBook/PhoneBook.styled';
 
-export class App extends React.Component {
-  state = {
-    contacts: data,
-    filter: '',
-  };
-  componentDidMount() {
-    const contacts = localStorage.getItem('contacts');
-    const parsedContacts = JSON.parse(contacts);
+export function App() {
+  const [contacts, setContacts] = useState(() => {
+    return JSON.parse(window.localStorage.getItem('contacts')) ?? data;
+  });
+  const [filter, setFilter] = useState('');
 
-    if (parsedContacts) {
-      this.setState({ contacts: parsedContacts });
-    }
-  }
+  useEffect(() => {
+    const contacts = window.localStorage.getItem('contacts');
+    if (contacts) {
+      setContacts(JSON.parse(contacts));
+    } else setContacts(data);
+  }, []);
 
-  componentDidUpdate(_, prevState) {
-    if (this.state.contacts !== prevState.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-    }
-  }
-  addContact = newContact => {
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
+
+  const addContact = newContact => {
     if (
-      this.state.contacts.some(
+      contacts.some(
         contact => contact.name.toLowerCase() === newContact.name.toLowerCase()
       )
     ) {
-      alert(newContact.name + ' is already in contacts');
+      alert(newContact.name + ' Contact is already in contacts');
     } else {
-      this.setState(prevState => ({
-        contacts: [newContact, ...prevState.contacts],
-      }));
+      setContacts(prevContacts => [newContact, ...prevContacts]);
     }
   };
 
-  deleteContact = contactId => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== contactId),
-    }));
-  };
-
-  filterHandler = event => {
-    this.setState({ filter: event.currentTarget.value });
-  };
-
-  showFilterList = () => {
-    return this.state.contacts.filter(contact =>
-      contact.name.toLowerCase().includes(this.state.filter.toLowerCase())
+  const deleteContact = contactId => {
+    setContacts(prevContacts =>
+      prevContacts.filter(contact => contact.id !== contactId)
     );
   };
 
-  showFormHandler = event => {
-    this.setState({
-      isFormVisible: !this.state.isFormVisible,
-    });
+  const filterHandler = event => {
+    setFilter(event.currentTarget.value);
   };
 
-  render() {
-    const { contacts } = this.state;
-    return (
-      <div
-        style={{
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-start',
-          alignItems: 'center',
-          color: '#010101',
-        }}
-      >
-        <PhoneBookBody>
-          <MainTitle>
-            Phonebook
-            <BsJournalBookmark />
-          </MainTitle>
-          <AddNewContactBtn onClick={this.showFormHandler}>
-            {this.state.isFormVisible ? 'Close form' : <IoPersonAdd />}
-          </AddNewContactBtn>
-          <FormSection>
-            {this.state.isFormVisible && (
-              <PhoneBook onSubmit={this.addContact} />
-            )}
-          </FormSection>
-          <ContactsSection>
-            <ContactsTitle>Contacts</ContactsTitle>
-            <Filter onInputHandler={this.filterHandler}></Filter>
-            {this.state.contacts.length === 0 ? (
-              <NoContactsSpan>
-                <MdNotListedLocation />
-                There're no contacts
-              </NoContactsSpan>
-            ) : (
-              <ContactsList
-                contacts={contacts}
-                onDeleteContact={this.deleteContact}
-                filterList={this.showFilterList()}
-              />
-            )}
-            <ContactsNumbers>
-              {contacts.length} {contacts.length > 1 ? 'contacts' : 'contact'}
-            </ContactsNumbers>
-          </ContactsSection>
-        </PhoneBookBody>
-      </div>
+  const showFilterList = (contacts, filter) => {
+    return contacts.filter(({ name }) =>
+      name.toLowerCase().includes(filter.toLowerCase())
     );
-  }
+  };
+
+  return (
+    <div
+      style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        color: '#010101',
+      }}
+    >
+      <PhoneBookBody>
+        <MainTitle>
+          Phonebook
+          <BsJournalBookmark />
+        </MainTitle>
+
+        <FormSection>
+          <PhoneBook onSubmit={addContact} />
+        </FormSection>
+        <ContactsSection>
+          <ContactsTitle>Contacts</ContactsTitle>
+          <Filter onInputHandler={filterHandler}></Filter>
+          {contacts.length === 0 ? (
+            <NoContactsSpan>
+              <MdNotListedLocation />
+              There're no contacts
+            </NoContactsSpan>
+          ) : (
+            <ContactsList
+              onDeleteContact={deleteContact}
+              filterList={showFilterList(contacts, filter)}
+            />
+          )}
+          <ContactsNumbers>
+            {contacts.length} {contacts.length > 1 ? 'contacts' : 'contact'}
+          </ContactsNumbers>
+        </ContactsSection>
+      </PhoneBookBody>
+    </div>
+  );
 }
