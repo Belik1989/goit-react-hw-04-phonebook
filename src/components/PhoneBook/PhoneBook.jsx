@@ -59,7 +59,7 @@ export function PhoneBook({ onSubmit }) {
           placeholder="Phone number"
         />
       </FormLabel>
-      <AddContactFormBtn type="submit">Submit</AddContactFormBtn>
+      <AddContactFormBtn type="submit">Add contact +</AddContactFormBtn>
     </Form>
   );
 }
